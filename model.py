@@ -152,7 +152,7 @@ class Block(nn.Module):
     def forward(self, x):
         # layer-norm is applied before the attention and mlp layers
         # This is different from the original implementation
-        # But is emphasized by Andrew's video: https://www.youtube.com/watch?v=kCc8FmEb1nY
+        # But is emphasized by Andrej's video: https://www.youtube.com/watch?v=kCc8FmEb1nY
         x = x + self.attn(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
