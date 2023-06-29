@@ -243,6 +243,7 @@ class GPT(nn.Module):
         pos_emb = self.transformer.wpe(
             pos
         )  # position embeddings of shape (t, n_embd)
+        # drop: dropout at the token embeddings and positional embeddings
         x = self.transformer.drop(tok_emb + pos_emb)
         for block in self.transformer.h:
             x = block(x)
@@ -252,9 +253,9 @@ class GPT(nn.Module):
             # if we are given some desired targets also calculate the loss
             logits = self.lm_head(x)
             loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)),
-                targets.view(-1),
-                ignore_index=-1,
+                logits.view(-1, logits.size(-1)),  # (b * t, vocab_size)
+                targets.view(-1),  # (b * t)
+                ignore_index=-1,  # ignore class of -1 (padding)
             )
         else:
             # inference-time mini-optimization: only forward the lm_head on the very last position
@@ -352,10 +353,13 @@ class GPT(nn.Module):
                 # special treatment for the Conv1D weights we need to transpose
                 assert sd_hf[k].shape[::-1] == sd[k].shape
                 with torch.no_grad():
-                    sd[k].copy_(sd_hf[k].t())
+                    sd[k].copy_(
+                        sd_hf[k].t()
+                    )  # transpose, only work for 2D tensor
             else:
                 # vanilla copy over the other parameters
                 assert sd_hf[k].shape == sd[k].shape
+                # if sd_hf tesnor has gradient, copy_ will also copy gradient
                 with torch.no_grad():
                     sd[k].copy_(sd_hf[k])
 
